@@ -1,0 +1,25 @@
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+
+# Build output
+build/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*~
