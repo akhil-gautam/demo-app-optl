@@ -1,8 +1,10 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const opentelemetry = require('@opentelemetry/api');
-const db = new sqlite3.Database(':memory:');
+const pidusage = require('pidusage');
+const v8 = require('v8');
 
+const db = new sqlite3.Database(':memory:');
 
 db.serialize(() => {
   db.run(
@@ -64,7 +66,6 @@ app.get('/orders', (req, res) => {
       res.send(rows);
     }
   });
-
 });
 
 app.get('/products', (req, res) => {
@@ -75,13 +76,12 @@ app.get('/products', (req, res) => {
       res.send(rows);
     }
   });
-
 });
 
-app.get("/users", (req, res) => {
+app.get('/users', (req, res) => {
   // to generate error data
   throw new Error('Something went wrong');
-  db.all("SELECT * FROM users", (err, rows) => {
+  db.all('SELECT * FROM users', (err, rows) => {
     if (err) {
       res.status(500).send(err.message);
     } else {
@@ -113,6 +113,33 @@ app.get('/orders/:id', (req, res) => {
 });
 
 app.use(errorHandler);
+
+const compute = async () => {
+  const stats = await pidusage(process.pid);
+  const tracer = opentelemetry.trace.getTracer('metricTracer');
+  tracer.startActiveSpan('metric', (span) => {
+    span.setAttribute('cpu', `${stats.cpu.toFixed(2)}%`);
+    span.setAttribute(
+      'memoryUsage',
+      `${(stats.memory / 1024 / 1024).toFixed(2)} MB`
+    );
+    span.setAttribute(
+      'heapUsage',
+      (v8.getHeapStatistics().used_heap_size / 1024 / 1024).toFixed(2) + 'MB'
+    );
+    span.end();
+  });
+};
+
+// Compute statistics every second:
+const interval = async (time) => {
+  setTimeout(async () => {
+    await compute();
+    interval(time);
+  }, time);
+};
+
+interval(10000);
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);

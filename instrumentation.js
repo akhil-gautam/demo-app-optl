@@ -20,7 +20,7 @@ const collectorOptions = {
   // url should be the URL of the optl-microservice
   // that is: https://github.com/akhil-gautam/optl-micro-service
 
-  url: 'http://localhost:3001/traces',
+  url: 'http://localhost:5000/traces',
   concurrencyLimit: 10, // an optional limit on pending requests
 };
 
